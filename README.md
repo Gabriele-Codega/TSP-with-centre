@@ -10,11 +10,11 @@ Note that, other than some _pretty much_ standard modules, it also requires Guro
 An empty directory which should be replaced by the directory found at [this website](http://webhotel4.ruc.dk/~keld/research/LKH/).
 
 Quoting the website
->> LKH is an effective implementation of the Lin-Kernighan heuristic for solving the traveling salesman problem.
+> LKH is an effective implementation of the Lin-Kernighan heuristic for solving the traveling salesman problem.
 
 ## .py files
 Some sample code that shows how to setup and solve a problem with the TSPC code.
 
 ## Other files
 - Shell script called by a class method to run the LKH algorithm
-- .tsp file that contains parameters for the LKH algorithm
+- .par file that contains parameters for the LKH algorithm
