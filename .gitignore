@@ -1,4 +1,6 @@
-__pychache__
+__pycache__/
+*.py[cod]
+
 .DS_Store
 *.par
 *.log
