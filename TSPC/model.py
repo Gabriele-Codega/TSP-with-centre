@@ -12,7 +12,22 @@ from . import utils
 
 class TSPCeuclidean:
     def __init__(self,nodes, e = metrics.E, d = metrics.da, K = 5, scale = 100 ,**kwargs) -> None:
-        
+        """
+        Initialise a model object on euclidean graph.
+
+        Parameters
+        ----------
+        nodes : array of shape (N,2)
+            coordinates of the nodes
+        e : function, optional
+            one of the energy functions defined in metrics.py, by default metrics.E.
+        d : function, optional
+            one of the edge distances defined in metrics.py, by default metrics.da
+        K : int, optional
+            number of triangular paths, by default 5
+        scale : int, optional
+            factor that multiplies E when writing the distance matrix for LKH, by default 100
+        """
         self.nodes = nodes
         self.scale = scale
         self.size = nodes.shape[0]
@@ -50,7 +65,7 @@ class TSPCeuclidean:
         self._tl = np.zeros((N,N,K))
         for i in range(N):
             for j in range(i,N):
-                temp = metrics.find_t_nodes(self.nodes[i],self.nodes[j],K=K)
+                temp = utils.find_t_nodes(self.nodes[i],self.nodes[j],K=K)
                 self._t_nodes[i,j] = temp[:,:2]
                 self._tl[i,j] = temp[:,2]
                 ## lower half

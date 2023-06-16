@@ -1,6 +1,47 @@
 import gurobipy as gp
 import numpy as np
+from scipy.spatial import distance
 
+from . import metrics
+
+### --------- tnodes utility ----------###
+
+def find_t_nodes(a,b,K,m = 2500):
+    """
+    Find K triangular nodes for the pair (a,b).
+
+    Parameters
+    ----------
+    a : 1D array
+        coordinates of the first node
+    b : 1D array
+        coordinates of the second node
+    K : int
+        number of triangular nodes to be found
+    m : int, optional
+        number of samples on the circumference, by default 2500
+
+    Returns
+    -------
+    t_nodes: array of shape (K,3)
+        array with (x,y,l) for each triangular node
+    """
+    t_nodes = np.zeros((K,3))
+    theta = np.linspace(0,2*np.pi,m)
+    d = metrics.dn(a,b)
+    for k in range(K):
+        R = (k+1)*d/K
+        if np.abs(R-d)<= 1e-8:
+            t_nodes[k] = [a[0],a[1],metrics.d2(a,b)]
+        else:
+            pts = np.array([np.cos(theta),np.sin(theta)]).T * R + np.array([0.5,0.5])
+            #dst = np.array([d2(a,p) + d2(b,p) for p in pts])
+            dsts = distance.cdist(np.array([a,b]),pts,metric = 'euclidean')
+            dst = np.sum(dsts,axis=0)
+            #dst = distance.cdist(a.reshape((1,2)),pts,metric = 'euclidean') + distance.cdist(b.reshape((1,2)),pts,metric = 'euclidean')
+            closest = np.argmin(dst)
+            t_nodes[k,:] = [pts[closest,0],pts[closest,1], dst[closest]]
+    return t_nodes
 
 
 ### ------ Gurobi utility functions ------ ###

@@ -1,0 +1,3 @@
+PROBLEM_FILE = tspc.tsp
+TOUR_FILE = tspc_tour.dat
+TRACE_LEVEL = 0

@@ -2,6 +2,6 @@ __pycache__/
 *.py[cod]
 
 .DS_Store
-*.par
+*.tsp
 *.log
 *.dat
