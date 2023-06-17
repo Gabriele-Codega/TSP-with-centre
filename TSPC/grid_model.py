@@ -8,6 +8,18 @@ from . import utils
 
 class TSPCgrid:
     def __init__(self,Nx,Ny,K) -> None:
+        """
+        Imitialise a grid model.
+
+        Parameters
+        ----------
+        Nx : int
+            number of nodes along x
+        Ny : int
+            number of nodes along y
+        K : int
+            number of triangular paths
+        """
         self.Nx = Nx
         self.Ny = Ny
         self.size = Nx*Ny
@@ -232,7 +244,7 @@ class TSPCgrid:
             self.tnodes = tnodes
             self.feasible_t = feasible_t
 
-    def optimise(self, tau,verbose = True):
+    def optimise(self, tau,verbose = True, maxtime = 180, gap = 5e-4):
         """Define the constrained Integer Program with triangular nodes, solve using Gurobi and save the tour.
 
         Parameters
@@ -241,6 +253,10 @@ class TSPCgrid:
             Upper bound on the total length
         verbose: bool
             if True, print a message before and after optimisation. True by default
+        maxtime: int, optional
+            time limit, in seconds. By default 180
+        gap: float, optional
+            relative gap at which the search for an optimum stops. By default 5e-4
 
         Returns
         -------
@@ -282,8 +298,8 @@ class TSPCgrid:
         # suppress outputs
         model.setParam(gp.GRB.Param.OutputFlag,0)
         model.Params.lazyConstraints = 1
-        model.Params.MIPGap = 5e-4
-        model.Params.TimeLimit = 3*60
+        model.Params.MIPGap = gap
+        model.Params.TimeLimit = maxtime
 
 
         ls = []
@@ -319,7 +335,7 @@ class TSPCgrid:
         return length,dist_from_c,model.Runtime
     
 
-    def optimise_direct_path(self,tau,verbose = True):
+    def optimise_direct_path(self,tau,verbose = True, maxtime = 180, gap = 5e-4):
         """Define the constrained Integer Program without triangular nodes, solve using Gurobi and save the tour.
 
         Parameters
@@ -328,6 +344,10 @@ class TSPCgrid:
             Upper bound on the total length
         verbose: bool
             if True, print a message before and after optimisation. True by default
+        maxtime: int, optional
+            time limit, in seconds. By default 180
+        gap: float, optional
+            relative gap at which the search for an optimum stops. By default 5e-4
 
 
         Returns
@@ -363,8 +383,8 @@ class TSPCgrid:
         # suppress outputs
         model.setParam(gp.GRB.Param.OutputFlag,0)
         model.Params.lazyConstraints = 1
-        model.Params.MIPGap = 5e-4
-        model.Params.TimeLimit = 3*60
+        model.Params.MIPGap = gap
+        model.Params.TimeLimit = maxtime
 
         ls_d = []
         cs_d = []

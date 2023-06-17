@@ -158,18 +158,20 @@ class TSPCeuclidean:
     def prepare_lkh(self, tpath = True, **kwargs):
         """
         Computes L, C, E for an LKH run.
-        Requires `_te`, which can be computed with `find_t_energy`.
+        Requires `_tl`,`_tc`,`_te`, which can be computed with `find_t_nodes`,`find_t_dist`,`find_t_energy`.
         """
-        self.find_t_energy_min()
-        self.find_t_len_min()
-        self.find_t_dist_min()
-        self.find_t_nodes_min()
-        
         if tpath:
+            self.find_t_energy_min()
+            self.find_t_len_min()
+            self.find_t_dist_min()
+            self.find_t_nodes_min()
+        
             self.E = self._Emin
             self.L = self._Lmin
             self.C = self._Cmin
             self.used_nodes = self._t_nodesmin
+        else:
+            self.compute_metrics()
 
         self.write_par()
 
@@ -263,7 +265,7 @@ class TSPCeuclidean:
 
         self.define_IP(tau,objective = 'E')
 
-    def define_IP(self, tau = None,objective = 'E', **kwargs):
+    def define_IP(self, tau = None,objective = 'E', maxtime = 120, gap = 1e-4, **kwargs):
         """
         Defines the IP problem for Gurobi.
 
@@ -275,6 +277,10 @@ class TSPCeuclidean:
             upper bound on the total length, by default None. If None, the unconstrained problem is defined
         objective : str, optional
             specifier for the objective function, by default 'E'. Other possible value is 'C'.
+        maxtime: int, optional
+            time limit, in seconds. By default 120
+        gap: float, optional
+            relative gap at which the search for an optimum stops. By default 1e-4
 
         Raises
         ------
@@ -311,7 +317,8 @@ class TSPCeuclidean:
 
         # suppress outputs
         self._m.setParam(gp.GRB.Param.OutputFlag,0)
-        self._m.Params.TimeLimit = 120
+        self._m.Params.MIPGap = gap
+        self._m.Params.TimeLimit = maxtime
         self._m.Params.lazyConstraints = 1
 
     def solve_gurobi(self, verbose = True):
