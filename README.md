@@ -22,6 +22,7 @@ Quoting the website
 Some sample code that shows how to setup and solve a problem with the TSPC code.
 - demo_*.py implement simple solutions to random problems
 - scalability_*.py implement ready-to-run scalability experiments
+- phase_transition.py allows to study the phase transition of the model
 
 ## Other files
 - Shell script called by a class method to run the LKH algorithm

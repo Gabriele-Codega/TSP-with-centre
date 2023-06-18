@@ -86,6 +86,7 @@ class TSPCgrid:
                 for j in range(i+1,self.size):
                     edges[j,i] = edges[i,j]
             
+            # check if the graph is connected and generate new edges if it is not
             invalid_row = [np.allclose(row,np.inf) for row in edges]
             if True in invalid_row:
                 valid = False
@@ -94,6 +95,7 @@ class TSPCgrid:
 
         np.fill_diagonal(edges,0)
 
+        # build adjecency list
         adj = [[] for _ in range(Nx*Ny)]
         for src,dest in combinations(labels,2):
             w = edges[src,dest]
@@ -124,12 +126,13 @@ class TSPCgrid:
         P = np.zeros_like(L,dtype = list) ## parents
         PE = np.zeros_like(L,dtype = list) ## lists of edges for each shortest path
 
-
+        # use Dijkstra's algorithm to find shortest paths and store the predecessors
         for s in labels:
             d, p = utils.dijkstra(self.adj,labels,s)
             L[s] = d
             P[s] = p
 
+        # from the list of predecessors build a list of edges used to go from i to j in different paths
         for i in range(size):
             for j in range(size):
                 path = []
@@ -148,6 +151,7 @@ class TSPCgrid:
         mi = np.zeros((size,size))
         g = np.zeros((size,size))
 
+        # all computations are as explained in the paper
         for k in range(size):
             for l in range(size):
                 d[k,l] = (L[k,l]-np.abs(L[k,c]-L[l,c]))*0.5
@@ -162,6 +166,7 @@ class TSPCgrid:
         C = np.zeros((size,size)) ## min distance from center among all the shortest paths
         shortest_path = np.zeros((size,size)) ## shortest path (the one with minimum C)
 
+        # for each shortest path from i to j, compute the total C (see paper) and at the end choose the minimum
         for i in range(size):
             for j in range(size):
                 if j != i:
@@ -201,6 +206,7 @@ class TSPCgrid:
         c = self.c_label
         size = self.size
 
+        # find the feasible triangular nodes
         feasible_t = np.zeros((size,size),dtype=dict) ## feasible triangular nodes for each pair of nodes
         for i in range(size):
             for j in range(size):
@@ -218,6 +224,7 @@ class TSPCgrid:
         tC = np.full((size,size,K),np.inf) ## tpath distance from center
         tnodes = np.full((size,size,K),None) ## tnodes for each pair of nodes
 
+        # keep some triangular nodes (see paper)
         for i in range(size):
             for j in range(size):
                 keys = list(feasible_t[i,j].keys())
@@ -276,18 +283,23 @@ class TSPCgrid:
         model.ModelSense = gp.GRB.MINIMIZE
 
         x = model.addVars([(i,j,k) for i in I for j in J for k in range(K)], vtype = gp.GRB.BINARY)
+        
+        # visit each node once
         for i in I:
             model.addConstr(gp.quicksum(x[i,j,k] for j in J for k in range(K)) == 1) 
             model.addConstr(gp.quicksum(x[j,i,k] for j in I for k in range(K)) == 1) 
 
+        # bound on total length
         model.addConstr(gp.quicksum(self.tL[i,j,k]* x[i,j,k] for i in I for j in J for k in range(K) if self.tL[i,j,k]!=np.inf) <= tau,name='Lbound')
 
+        # if for nodes i,j there are less than K triangular paths, exclude non existent triangular nodes
         for i in I:
             for j in J:
                 for k in range(K):
                     if self.tnodes[i,j,k] is None:
                         model.addConstr(x[i,j,k] == 0)
 
+        # minimise C
         model.setObjective(gp.quicksum(self.tC[i,j,k]*x[i,j,k] for i in I for j in J for k in range(K) if self.tC[i,j,k]!=np.inf and not np.isnan(self.tC[i,j,k])))
         
         # internal variables useful for the subtour elimination
@@ -295,7 +307,7 @@ class TSPCgrid:
         model._K = K
         model._size = N
 
-        # suppress outputs
+        # suppress outputs, allow lazy constraints and set stopping criteria
         model.setParam(gp.GRB.Param.OutputFlag,0)
         model.Params.lazyConstraints = 1
         model.Params.MIPGap = gap
@@ -368,11 +380,15 @@ class TSPCgrid:
         model.ModelSense = gp.GRB.MINIMIZE
 
         x = model.addVars([(i,j,k) for i in I for j in J for k in range(K)], vtype = gp.GRB.BINARY)
+
+        # visit each node once
         for i in I:
             model.addConstr(gp.quicksum(x[i,j,k] for j in J for k in range(K)) == 1) 
             model.addConstr(gp.quicksum(x[j,i,k] for j in I for k in range(K)) == 1) 
+        # bound on total length 
         model.addConstr(gp.quicksum(self.L[i,j]* x[i,j,k] for i in I for j in J for k in range(K) if self.L[i,j]!=np.inf) <= tau,name='Lbound')
 
+        # minimise C
         model.setObjective(gp.quicksum(self.C[i,j]*x[i,j,k] for i in I for j in J for k in range(K) if self.C[i,j]!=np.inf and not np.isnan(self.C[i,j])))
 
         # internal variables useful for the subtour elimination
@@ -380,7 +396,7 @@ class TSPCgrid:
         model._K = K
         model._size = N
 
-        # suppress outputs
+        # suppress outputs, allow lazy constraints and set stopping criteria
         model.setParam(gp.GRB.Param.OutputFlag,0)
         model.Params.lazyConstraints = 1
         model.Params.MIPGap = gap

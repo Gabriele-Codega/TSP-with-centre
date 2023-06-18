@@ -35,10 +35,8 @@ def find_t_nodes(a,b,K,m = 2500):
             t_nodes[k] = [a[0],a[1],metrics.d2(a,b)]
         else:
             pts = np.array([np.cos(theta),np.sin(theta)]).T * R + np.array([0.5,0.5])
-            #dst = np.array([d2(a,p) + d2(b,p) for p in pts])
             dsts = distance.cdist(np.array([a,b]),pts,metric = 'euclidean')
             dst = np.sum(dsts,axis=0)
-            #dst = distance.cdist(a.reshape((1,2)),pts,metric = 'euclidean') + distance.cdist(b.reshape((1,2)),pts,metric = 'euclidean')
             closest = np.argmin(dst)
             t_nodes[k,:] = [pts[closest,0],pts[closest,1], dst[closest]]
     return t_nodes

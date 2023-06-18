@@ -83,7 +83,6 @@ class TSPCeuclidean:
         for i in range(N):
             for j in range(i,N):
                 for k in range(K):
-                    ### could make it so that we can control the sample number
                     self._tc[i,j,k] = metrics.t_path_dist(self.nodes[i],self.nodes[j],self._t_nodes[i,j,k,:2])
                     ## lower half
                     self._tc[j,i,k] = self._tc[i,j,k]
@@ -296,13 +295,17 @@ class TSPCeuclidean:
         self._m.ModelSense = gp.GRB.MINIMIZE
 
         x = self._m.addVars([(i,j,k) for i in I for j in J for k in range(K)], vtype = gp.GRB.BINARY)
+
+        # visit each node once
         for i in I:
             self._m.addConstr(gp.quicksum(x[i,j,k] for j in J for k in range(K)) == 1) 
             self._m.addConstr(gp.quicksum(x[j,i,k] for j in I for k in range(K)) == 1) 
         
+        # constraint of total length
         if not (tau is None):
             self._m.addConstr(gp.quicksum(self._tl[i,j,k]* x[i,j,k] for i in I for j in J for k in range(K)) <= tau)
 
+        # set the objective
         if objective == 'E':
             self._m.setObjective(gp.quicksum(self._te[i,j,k]*x[i,j,k] for i in I for j in J for k in range(K)))
         elif objective == 'C':
@@ -315,7 +318,7 @@ class TSPCeuclidean:
         self._m._K = K
         self._m._size = N
 
-        # suppress outputs
+        # suppress outputs, set stopping criteria and allow lazy constraints
         self._m.setParam(gp.GRB.Param.OutputFlag,0)
         self._m.Params.MIPGap = gap
         self._m.Params.TimeLimit = maxtime
