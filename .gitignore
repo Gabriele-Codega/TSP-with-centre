@@ -7,3 +7,5 @@ __pycache__/
 *.dat
 
 data/
+
+.ipynb
