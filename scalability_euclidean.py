@@ -1,6 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+    bar = True
+except ImportError:
+    print('Running with no progressbar')
+    bar = False
+
 from pathlib import Path
 import time
 import sys
@@ -13,71 +20,74 @@ def scalability_euclidean(minsize = 10, maxsize = 80, step = 10, ks = [1,5], n_e
     Ns = list(range(minsize,maxsize+1,step))
 
     t_aver = []
-    with tqdm(total=len(Ns)*len(ks)*n_exp*3) as pbar:
-        for N in Ns:
+    if bar: pbar = tqdm(total=len(Ns)*len(ks)*n_exp*3)
+    for N in Ns:
 
-            node_instances = np.random.random((n_exp,N,2))
+        node_instances = np.random.random((n_exp,N,2))
 
-            ## compute the lower bound on l as the solution to tspc with r=0
-            llos = []
+        ## compute the lower bound on l as the solution to tspc with r=0
+        llos = []
+        for nodes in node_instances:
+            tsp = TSPCeuclidean(nodes,r=0,p=81)
+            tsp.compute_metrics()
+            tsp.write_par()
+            l,c,t = tsp.solve_lkh(verbose=False)
+            llos.append(l)
+        llo = np.mean(llos)
+
+        taus = [1.5*llo, 4*llo, 7*llo]
+
+
+        ls = np.zeros((len(ks),node_instances.shape[0],len(taus)))
+        cs = np.zeros((len(ks),node_instances.shape[0],len(taus)))
+        ts = np.zeros((len(ks),node_instances.shape[0],len(taus)))
+        prets = np.zeros((len(ks),node_instances.shape[0]))
+
+        i = 0
+        for K in ks:
+            j = 0
             for nodes in node_instances:
-                tsp = TSPCeuclidean(nodes,r=0,p=81)
-                tsp.compute_metrics()
-                tsp.write_par()
-                l,c,t = tsp.solve_lkh(verbose=False)
-                llos.append(l)
-            llo = np.mean(llos)
+                tsp = TSPCeuclidean(nodes, K = K, p=81)
 
-            taus = [1.5*llo, 4*llo, 7*llo]
+                ti = time.monotonic()
+                tsp.find_t_nodes()
+                tsp.find_t_dist()
+                tf = time.monotonic()
+                prets[i,j] = tf-ti
 
+                k = 0
+                for tau in taus:
+                    tsp.define_IP(tau=tau,objective='C')
+                    l,c,t = tsp.solve_gurobi(verbose=False)
+                    ls[i,j,k] = l
+                    cs[i,j,k] = c
+                    ts[i,j,k] = t
+                    if bar: pbar.update(1)
+                    k += 1
 
-            ls = np.zeros((len(ks),node_instances.shape[0],len(taus)))
-            cs = np.zeros((len(ks),node_instances.shape[0],len(taus)))
-            ts = np.zeros((len(ks),node_instances.shape[0],len(taus)))
-            prets = np.zeros((len(ks),node_instances.shape[0]))
+                j += 1
+            i += 1
 
-            i = 0
-            for K in ks:
-                j = 0
-                for nodes in node_instances:
-                    tsp = TSPCeuclidean(nodes, K = K, p=81)
+        t_aver.append(np.mean(ts,axis=1))
 
-                    ti = time.monotonic()
-                    tsp.find_t_nodes()
-                    tsp.find_t_dist()
-                    tf = time.monotonic()
-                    prets[i,j] = tf-ti
+        if save_data:
+            cwd = Path.cwd()/'data'
+            if not cwd.is_dir():
+                cwd.mkdir()
+            file1 = f"./data/scalability_N{N:}_L.npy"
+            file2 = f"./data/scalability_N{N:}_C.npy"
+            file3 = f"./data/scalability_N{N:}_t.npy"
+            file4 = f"./data/scalability_N{N:}_tpre.npy"
+            try:
+                np.save(file1,ls)
+                np.save(file2,cs)
+                np.save(file3,ts)
+                np.save(file4,prets)
+            except:
+                print("Couldn't save data :(")
 
-                    k = 0
-                    for tau in taus:
-                        tsp.define_IP(tau=tau,objective='C')
-                        l,c,t = tsp.solve_gurobi(verbose=False)
-                        ls[i,j,k] = l
-                        cs[i,j,k] = c
-                        ts[i,j,k] = t
-                        pbar.update(1)
-                        k += 1
+    if bar: pbar.close()
 
-                    j += 1
-                i += 1
-
-            t_aver.append(np.mean(ts,axis=1))
-
-            if save_data:
-                cwd = Path.cwd()/'data'
-                if not cwd.is_dir():
-                    cwd.mkdir()
-                file1 = f"./data/scalability_N{N:}_L.npy"
-                file2 = f"./data/scalability_N{N:}_C.npy"
-                file3 = f"./data/scalability_N{N:}_t.npy"
-                file4 = f"./data/scalability_N{N:}_tpre.npy"
-                try:
-                    np.save(file1,ls)
-                    np.save(file2,cs)
-                    np.save(file3,ts)
-                    np.save(file4,prets)
-                except:
-                    print("Couldn't save data :(")
     t_aver = np.array(t_aver).reshape((len(Ns),len(ks),3))
     axs = []
     fig,axs = plt.subplots(1,3)

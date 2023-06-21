@@ -1,6 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+    bar = True
+except ImportError:
+    print('Running with no progressbar')
+    bar = False
+
 from pathlib import Path
 import sys
 import argparse
@@ -19,12 +26,15 @@ def phase_transition_test(rmin = 0, rmax = 10, step = 0.2, size = 50, n_exp = 10
     ls_grb = np.zeros((node_instances.shape[0],rs.shape[0]))
     cs_grb = np.zeros((node_instances.shape[0],rs.shape[0]))
     i = 0
-    for nodes in tqdm(node_instances, desc='Instance number'):
+
+    if bar: pbar = tqdm(total= len(node_instances)*len(rs))
+
+    for nodes in node_instances:
         tsp = TSPCeuclidean(nodes,scale = 1000, p = 81)
         tsp.find_t_nodes()
         tsp.find_t_dist()
         j = 0
-        for r in tqdm(rs,desc = 'r'):
+        for r in rs:
             tsp.params = {'r': r}
             tsp.find_t_energy()
 
@@ -41,9 +51,12 @@ def phase_transition_test(rmin = 0, rmax = 10, step = 0.2, size = 50, n_exp = 10
             l,c,t = tsp.solve_lkh(verbose=False)
             ls_lkh[i,j] = l
             cs_lkh[i,j] = c
+
+            if bar: pbar.update(1)
             j += 1
         i += 1
-
+        
+    if bar: pbar.close()
 
     if save_data:
         cwd = Path.cwd()/'data'

@@ -1,7 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+    bar = True
+except ImportError:
+    print('Running with no progressbar')
+    bar = False
+
 import sys
 import argparse
 
@@ -14,42 +21,44 @@ def scalability_grid(nxmin = 4, nxmax = 8, nymin = 5, nymax = 11, n_exp = 10, K 
     I = range(n_exp)
     ts = np.zeros((len(nxs)+len(nys)-1,n_exp,2))
 
-    with tqdm(total=(len(nxs)+len(nys)-1)*n_exp) as pbar:
-        Ny = nys[0]
-        j = 0
-        for Nx in nxs:
-            tsp = TSPCgrid(Nx,Nx,K)
-            tsp.generate_nodes()
+    if bar: pbar = tqdm(total=(len(nxs)+len(nys)-1)*n_exp)
+    Ny = nys[0]
+    j = 0
+    for Nx in nxs:
+        tsp = TSPCgrid(Nx,Nx,K)
+        tsp.generate_nodes()
 
-            for i in I:
-                tsp.generate_edges()
-                tsp.find_shortest_paths()
-                tsp.find_t_paths()
-                l,c,t = tsp.optimise_direct_path(tau,verbose=False)
-                ts[j,i,0] = t
+        for i in I:
+            tsp.generate_edges()
+            tsp.find_shortest_paths()
+            tsp.find_t_paths()
+            l,c,t = tsp.optimise_direct_path(tau,verbose=False)
+            ts[j,i,0] = t
 
-                l,c,t = tsp.optimise(tau,verbose=False)
-                ts[j,i,1] = t
+            l,c,t = tsp.optimise(tau,verbose=False)
+            ts[j,i,1] = t
 
-                pbar.update(1)
-            j += 1
+            if bar: pbar.update(1)
+        j += 1
 
-        Nx = nxs[-1]
-        for Ny in nys[1:]:
-            tsp = TSPCgrid(Nx,Ny,K)
-            tsp.generate_nodes()
+    Nx = nxs[-1]
+    for Ny in nys[1:]:
+        tsp = TSPCgrid(Nx,Ny,K)
+        tsp.generate_nodes()
 
-            for i in I:
-                tsp.generate_edges()
-                tsp.find_shortest_paths()
-                tsp.find_t_paths()
-                l,c,t = tsp.optimise_direct_path(tau,verbose=False)
-                ts[j,i,0] = t
+        for i in I:
+            tsp.generate_edges()
+            tsp.find_shortest_paths()
+            tsp.find_t_paths()
+            l,c,t = tsp.optimise_direct_path(tau,verbose=False)
+            ts[j,i,0] = t
 
-                l,c,t = tsp.optimise(tau,verbose=False)
-                ts[j,i,1] = t
-                pbar.update(1)
-            j += 1
+            l,c,t = tsp.optimise(tau,verbose=False)
+            ts[j,i,1] = t
+            if bar: pbar.update(1)
+        j += 1
+
+    if bar: pbar.close()
 
     cwd = Path.cwd()/'data'
     if not cwd.is_dir():

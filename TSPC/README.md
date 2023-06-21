@@ -18,6 +18,13 @@ The methods include
 - methods to define Gurobi models and optimise them, with or without triangular paths, and retrieve the optimal path
 - a method to visualise the grid
 
+## annealing.py
+A class to implement a Simulated Annealing process.
+
+The class requires a `TSPCeuclidean` model and implements a method to solve the problem with simulated annealing, with or without triangular paths.
+
+Note that the default parameters are not necessarily the best. They were determined via trial and error until a reasonably good solution to the TSPC was found. Since the runtime for this method is substantially larger than the other two, no further refinement on the parameters was made.
+
 ## metrics.py
 Includes the definition of distance and energy functions employed in the paper.
 

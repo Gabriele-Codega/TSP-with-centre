@@ -16,8 +16,6 @@ print('Optimising with tpaths')
 tsp.optimise(20)
 
 print('Tour: ',tsp.tour)
-fig, ax = tsp.plot()
-plt.show()
 
 print('Optimising with direct paths')
 tsp.optimise_direct_path(20)
